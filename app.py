@@ -809,4 +809,5 @@ def get_chat_debug(chat_id):
 if __name__ == '__main__':
     if not os.environ.get("GROQ_API_KEY"):
         raise ValueError("Please set the GROQ_API_KEY in the .env file before running the application.")
-    app.run()
+    port = int(os.environ.get("PORT", 10000))  # Default to 10000 for local testing
+    app.run(host="0.0.0.0", port=port)
