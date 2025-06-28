@@ -807,7 +807,31 @@ def get_chat_debug(chat_id):
     return jsonify(conversation)
 
 if __name__ == '__main__':
-    if not os.environ.get("GROQ_API_KEY"):
-        raise ValueError("Please set the GROQ_API_KEY in the .env file before running the application.")
-    port = int(os.environ.get("PORT", 10000))  # Default to 10000 for local testing
-    app.run(host="0.0.0.0", port=port)
+    import os
+    if os.environ.get("RENDER"):  # Check if running on Render
+        # Production environment: Use Gunicorn
+        from gunicorn.app.base import BaseApplication
+
+        class FlaskApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key.lower(), value)
+
+            def load(self):
+                return self.application
+
+        options = {
+            'bind': f"0.0.0.0:{os.environ.get('PORT', '10000')}",
+            'workers': 1,  # Adjust based on your needs
+            'timeout': 120,
+        }
+        FlaskApplication(app, options).run()
+    else:
+        # Local development: Use Flask's built-in server
+        port = int(os.environ.get("PORT", 10000))
+        app.run(host="0.0.0.0", port=port, debug=True)
