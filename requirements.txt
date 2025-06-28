@@ -1,0 +1,10 @@
+langchain
+langchain_experimental
+markdown
+litellm
+dotenv
+chromadb
+flask
+sentence-transformers
+fpdf
+tinydb

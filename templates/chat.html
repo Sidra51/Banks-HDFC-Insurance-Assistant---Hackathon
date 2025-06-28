@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HDFC Life Insurance Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/github-dark.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Debug Toggle -->
+  <button class="debug-toggle" onclick="toggleDebugPanel()" title="Toggle Debug">
+    <a href="{{ url_for('index') }}" class="btn btn-primary"><i class="fas fa-home me-2"></i></a>
+  </button>
+
+  <div class="flex h-screen">
+    <!-- Left Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button onclick="createNewChat()" class="new-chat-btn">
+          <i class="fas fa-plus"></i>
+          New Chat
+        </button>
+      </div>
+      
+      <div class="overflow-y-auto flex-1 scrollbar-thin" id="chat-list">
+        {% for chat in chats %}
+        <div class="chat-item {% if chat.id == current_chat_id %}active{% endif %} group"
+             onclick="loadChat('{{ chat.id }}')"
+             data-chat-id="{{ chat.id }}">
+          <i class="fas fa-message text-sm mr-3 text-gray-400"></i>
+          <div class="flex-1 truncate text-sm">{{ chat.title }}</div>
+          <button onclick="event.stopPropagation(); deleteChat('{{ chat.id }}')"
+                  class="hidden group-hover:block text-gray-400 hover:text-red-400 ml-2">
+            <i class="fas fa-trash-alt text-xs"></i>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <i class="fas fa-shield-alt text-lg mr-2 text-blue-400"></i>
+          <span>HDFC Life Assistant</span>
+        </div>
+      </div>
+    </aside>
+ 
+    <!-- Main Chat Area -->
+    <main class="main-content">
+<div class="mode-tabs flex justify-center mb-4">
+  <button class="mode-tab px-4 py-2 mx-2 rounded-lg text-white font-semibold transition-all duration-200 {% if mode == 'user' %}bg-hdfc-red{% else %}bg-hdfc-gray hover:bg-hdfc-light-gray{% endif %}" 
+          data-mode="user" 
+          onclick="switchMode('user')">
+    User
+  </button>
+  <button class="mode-tab px-4 py-2 mx-2 rounded-lg text-white font-semibold transition-all duration-200 {% if mode == 'field_agent' %}bg-hdfc-red{% else %}bg-hdfc-gray hover:bg-hdfc-light-gray{% endif %}" 
+          data-mode="field_agent" 
+          onclick="switchMode('field_agent')">
+    Field Agent
+  </button>
+</div>
+
+      <div class="messages-container scrollbar-thin" id="messages">
+        {% if messages|length == 0 %}
+        <div class="empty-state">
+          <h1>HDFC Life Insurance Assistant</h1>
+          <p id="empty-state-text">
+            {% if mode == 'field_agent' %}
+              Hello! I'm your HDFC Life Insurance Field Agent Assistant. I can help you craft effective pitches, design product strategies, and optimize HDFC Life offerings for your clients.
+            {% else %}
+              Hello! I'm your personal HDFC Life Insurance advisor. I can help you with policy information, claims, coverage options, and answer any insurance-related questions you may have.
+            {% endif %}
+          </p>
+          
+          <div class="example-prompts" id="example-prompts">
+            {% if mode == 'field_agent' %}
+            <div class="example-prompt" onclick="useExamplePrompt('How can I pitch HDFC Life term insurance to a young professional emphasizing affordability and protection?')">
+              <strong>Term Insurance Pitch</strong>
+              <p class="text-sm text-gray-300 mt-1">How can I pitch HDFC Life term insurance to a young professional emphasizing affordability and protection?</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('Suggest a sales pitch for HDFC ULIP plans targeting high-net-worth individuals looking for wealth creation.')">
+              <strong>ULIP Pitch</strong>
+              <p class="text-sm text-gray-300 mt-1">Suggest a sales pitch for HDFC ULIP plans targeting high-net-worth individuals looking for wealth creation.</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('Provide a script to explain the benefits of HDFC pension plans to a middle-aged couple planning for retirement.')">
+              <strong>Pension Plan Pitch</strong>
+              <p class="text-sm text-gray-300 mt-1">Provide a script to explain the benefits of HDFC pension plans to a middle-aged couple planning for retirement.</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('How should I position HDFC health insurance plans to a family concerned about rising medical costs?')">
+              <strong>Health Insurance Pitch</strong>
+              <p class="text-sm text-gray-300 mt-1">How should I position HDFC health insurance plans to a family concerned about rising medical costs?</p>
+            </div>
+            {% else %}
+            <div class="example-prompt" onclick="useExamplePrompt('I am 30 years old and looking for a retirement plan. What HDFC pension options do you recommend?')">
+              <strong>Retirement Planning</strong>
+              <p class="text-sm text-gray-300 mt-1">I am 30 years old and looking for a retirement plan. What HDFC pension options do you recommend?</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('Compare HDFC term insurance plans for a 35-year-old with 1 crore coverage.')">
+              <strong>Term Insurance</strong>
+              <p class="text-sm text-gray-300 mt-1">Compare HDFC term insurance plans for a 35-year-old with 1 crore coverage.</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('I want to invest in ULIP plans. Show me HDFC investment options with insurance coverage.')">
+              <strong>ULIP Plans</strong>
+              <p class="text-sm text-gray-300 mt-1">I want to invest in ULIP plans. Show me HDFC investment options with insurance coverage.</p>
+            </div>
+            <div class="example-prompt" onclick="useExamplePrompt('What are the tax benefits of HDFC Life insurance policies under Section 80C?')">
+              <strong>Tax Benefits</strong>
+              <p class="text-sm text-gray-300 mt-1">What are the tax benefits of HDFC Life insurance policies under Section 80C?</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+          {% for message in messages %}
+          <div class="chat-message {% if message.role == 'assistant' %}assistant-message{% else %}user-message{% endif %}">
+            {% if message.role == 'assistant' %}
+            <div class="message-content">
+              <div class="assistant-avatar">
+                <i class="fas fa-shield-alt text-white text-lg"></i>
+              </div>
+              <div class="assistant-content">
+                <div id="message-{{ loop.index }}">{{ message.content }}</div>
+                <button class="narrate-btn text-gray-400 hover:text-blue-400 mt-2" data-text="{{ message.content }}">
+                  <i class="fas fa-volume-up text-sm"></i> Narrate
+                </button>
+              </div>
+            </div>
+            {% else %}
+            <div class="message-content">
+              {{ message.content }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <br><br>
+ 
+      <!-- Fixed Input Area at Bottom -->
+      <div class="input-footer">
+        <div class="input-area">
+          <form id="chat-form" class="relative">
+            <div class="input-container">
+              <textarea
+                id="user-input"
+                rows="1"
+                placeholder="Ask me about HDFC Life insurance policies..."
+                onInput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 200) + 'px';"
+                onKeyDown="handleKeyDown(event)"
+              ></textarea>
+              <button type="button" class="voice-btn text-gray-400 hover:text-blue-400" id="voice-btn">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="submit" class="send-button" id="send-btn">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+            <div class="text-xs text-gray-400 mt-2 text-center">
+              HDFC Life Insurance Assistant • Professional advice for your financial security
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+ 
+  <script>
+  const currentChatId = "{{ current_chat_id }}";
+  let loadingResponse = false;
+  let debugMode = false;
+  let isVoiceInput = false; // Track if the input came from voice
+  let currentMode = "{{ mode|default('user') }}"; // Default to user mode
+
+  // Setup Web Speech API for speech recognition
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  let isRecording = false;
+
+  // Setup marked.js renderer for markdown
+  marked.setOptions({
+    renderer: new marked.Renderer(),
+    highlight: function(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    },
+    langPrefix: 'hljs language-',
+    pedantic: false,
+    gfm: true,
+    breaks: true,
+    sanitize: false,
+    smartypants: false,
+    xhtml: false
+  });
+
+  // Process any existing assistant messages for markdown
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.assistant-content > div').forEach(element => {
+      element.innerHTML = marked.parse(element.textContent);
+    });
+
+    // Initialize code highlighting
+    document.querySelectorAll('pre code').forEach((block) => {
+      hljs.highlightBlock(block);
+    });
+
+    // Voice button event listener
+    const voiceBtn = document.getElementById('voice-btn');
+    voiceBtn.addEventListener('click', () => {
+      if (!isRecording) {
+        recognition.start();
+        voiceBtn.innerHTML = '<i class="fas fa-microphone text-red-400"></i>';
+        voiceBtn.classList.add('recording');
+        isRecording = true;
+        isVoiceInput = true; // Mark input as voice-initiated
+      } else {
+        recognition.stop();
+      }
+    });
+
+    // Handle speech recognition results
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const input = document.getElementById('user-input');
+      input.value = transcript;
+      voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      voiceBtn.classList.remove('recording');
+      isRecording = false;
+
+      // Automatically send the transcribed text
+      if (transcript.trim()) {
+        sendMessage(transcript.trim());
+      }
+    };
+
+    recognition.onend = () => {
+      if (isRecording) {
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        voiceBtn.classList.remove('recording');
+        isRecording = false;
+      }
+    };
+
+    // Handle speech recognition errors
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      voiceBtn.classList.remove('recording');
+      isRecording = false;
+      alert('Speech recognition error: ' + event.error);
+    };
+
+    // Narrate button event listeners for existing messages
+    document.querySelectorAll('.narrate-btn').forEach(btn => {
+      setupNarrateButton(btn);
+    });
+
+    // Initialize active tab and example prompts
+    updateTabStyles();
+    updateExamplePrompts();
+  });
+
+  // Function to switch modes
+  function switchMode(mode) {
+    currentMode = mode;
+    updateTabStyles();
+    updateExamplePrompts();
+    const input = document.getElementById('user-input');
+    input.placeholder = mode === 'field_agent' 
+      ? 'Ask about product strategies or enhancements...' 
+      : 'Ask me about HDFC Life insurance policies...';
+    input.focus();
+  }
+
+  // Function to update tab styles
+  function updateTabStyles() {
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      const isActive = tab.dataset.mode === currentMode;
+      tab.classList.toggle('bg-hdfc-red', isActive);
+      tab.classList.toggle('bg-hdfc-gray', !isActive);
+      tab.classList.toggle('hover:bg-hdfc-light-gray', !isActive);
+    });
+  }
+
+  // Function to update example prompts based on mode
+  function updateExamplePrompts() {
+    const messagesContainer = document.getElementById('messages');
+    const isEmpty = messagesContainer.querySelector('.empty-state');
+    if (!isEmpty) return; // Only update if in empty state
+
+    const examplePrompts = document.getElementById('example-prompts');
+    const emptyStateText = document.getElementById('empty-state-text');
+
+    if (currentMode === 'field_agent') {
+      emptyStateText.innerHTML = "Hello! I'm your HDFC Life Insurance Field Agent Assistant. I can help you craft effective pitches, design product strategies, and optimize HDFC Life offerings for your clients.";
+      examplePrompts.innerHTML = `
+        <div class="example-prompt" onclick="useExamplePrompt('How can I pitch HDFC Life term insurance to a young professional emphasizing affordability and protection?')">
+          <strong>Term Insurance Pitch</strong>
+          <p class="text-sm text-gray-300 mt-1">How can I pitch HDFC Life term insurance to a young professional emphasizing affordability and protection?</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('Suggest a sales pitch for HDFC ULIP plans targeting high-net-worth individuals looking for wealth creation.')">
+          <strong>ULIP Pitch</strong>
+          <p class="text-sm text-gray-300 mt-1">Suggest a sales pitch for HDFC ULIP plans targeting high-net-worth individuals looking for wealth creation.</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('Provide a script to explain the benefits of HDFC pension plans to a middle-aged couple planning for retirement.')">
+          <strong>Pension Plan Pitch</strong>
+          <p class="text-sm text-gray-300 mt-1">Provide a script to explain the benefits of HDFC pension plans to a middle-aged couple planning for retirement.</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('How should I position HDFC health insurance plans to a family concerned about rising medical costs?')">
+          <strong>Health Insurance Pitch</strong>
+          <p class="text-sm text-gray-300 mt-1">How should I position HDFC health insurance plans to a family concerned about rising medical costs?</p>
+        </div>
+      `;
+    } else {
+      emptyStateText.innerHTML = "Hello! I'm your personal HDFC Life Insurance advisor. I can help you with policy information, claims, coverage options, and answer any insurance-related questions you may have.";
+      examplePrompts.innerHTML = `
+        <div class="example-prompt" onclick="useExamplePrompt('I am 30 years old and looking for a retirement plan. What HDFC pension options do you recommend?')">
+          <strong>Retirement Planning</strong>
+          <p class="text-sm text-gray-300 mt-1">I am 30 years old and looking for a retirement plan. What HDFC pension options do you recommend?</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('Compare HDFC term insurance plans for a 35-year-old with 1 crore coverage.')">
+          <strong>Term Insurance</strong>
+          <p class="text-sm text-gray-300 mt-1">Compare HDFC term insurance plans for a 35-year-old with 1 crore coverage.</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('I want to invest in ULIP plans. Show me HDFC investment options with insurance coverage.')">
+          <strong>ULIP Plans</strong>
+          <p class="text-sm text-gray-300 mt-1">I want to invest in ULIP plans. Show me HDFC investment options with insurance coverage.</p>
+        </div>
+        <div class="example-prompt" onclick="useExamplePrompt('What are the tax benefits of HDFC Life insurance policies under Section 80C?')">
+          <strong>Tax Benefits</strong>
+          <p class="text-sm text-gray-300 mt-1">What are the tax benefits of HDFC Life insurance policies under Section 80C?</p>
+        </div>
+      `;
+    }
+  }
+
+  // Function to setup narrate button event listener
+  function setupNarrateButton(btn) {
+    let isNarrating = false;
+    let utterance = null;
+
+    btn.addEventListener('click', () => {
+      if (!isNarrating) {
+        // Start narration
+        const text = btn.getAttribute('data-text');
+        utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.volume = 0.7;
+        utterance.rate = 1.4;
+        utterance.pitch = 1.3;
+
+        // Update button appearance
+        btn.innerHTML = '<i class="fas fa-stop text-sm"></i> Stop';
+        btn.classList.add('narrating');
+        isNarrating = true;
+
+        // Handle narration end
+        utterance.onend = () => {
+          btn.innerHTML = '<i class="fas fa-volume-up text-sm"></i> Narrate';
+          btn.classList.remove('narrating');
+          isNarrating = false;
+          utterance = null;
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        // Stop narration
+        window.speechSynthesis.cancel();
+        btn.innerHTML = '<i class="fas fa-volume-up text-sm"></i> Narrate';
+        btn.classList.remove('narrating');
+        isNarrating = false;
+        utterance = null;
+      }
+    });
+
+    return {
+      startNarration: () => {
+        if (!isNarrating) {
+          const text = btn.getAttribute('data-text');
+          utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          utterance.volume = 1;
+          utterance.rate = 1;
+          utterance.pitch = 1;
+
+          btn.innerHTML = '<i class="fas fa-stop text-sm"></i> Stop';
+          btn.classList.add('narrating');
+          isNarrating = true;
+
+          utterance.onend = () => {
+            btn.innerHTML = '<i class="fas fa-volume-up text-sm"></i> Narrate';
+            btn.classList.remove('narrating');
+            isNarrating = false;
+            utterance = null;
+          };
+
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+    };
+  }
+
+  // Handle key down events
+  function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      isVoiceInput = false; // Mark as non-voice input for keyboard
+      document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+  }
+
+  // Handle form submission
+  document.getElementById('chat-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('user-input');
+    const query = input.value.trim();
+
+    if (!query || loadingResponse) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    await sendMessage(query);
+  });
+
+  async function sendMessage(query) {
+    loadingResponse = true;
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+
+    // Add user message immediately
+    addMessage('user', query);
+
+    // Add typing indicator
+    const typingId = addTypingIndicator();
+
+    try {
+      const response = await fetch(`/api/chat/${currentChatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, mode: currentMode })
+      });
+
+      const data = await response.json();
+
+      // Remove typing indicator
+      removeTypingIndicator(typingId);
+
+      // Add assistant message with markdown
+      const narrateBtn = addMessage('assistant', data.response, isVoiceInput);
+
+      // Automatically narrate if the query was sent via voice
+      if (isVoiceInput && narrateBtn) {
+        narrateBtn.startNarration();
+      }
+
+      // Reset voice input flag
+      isVoiceInput = false;
+
+      // Update debug panel if open
+      if (debugMode && data.response_json) {
+        updateDebugPanel(data.response_json);
+      }
+
+      // Update chat list
+      await updateChatList();
+    } catch (error) {
+      console.error('Error:', error);
+      removeTypingIndicator(typingId);
+      addMessage('assistant', 'I apologize, but I\'m experiencing technical difficulties. Please try again in a moment.');
+    }
+
+    loadingResponse = false;
+    sendBtn.disabled = false;
+  }
+
+  function addTypingIndicator() {
+    const messagesContainer = document.getElementById('messages');
+    const typingDiv = document.createElement('div');
+    const typingId = 'typing-' + Date.now();
+
+    typingDiv.id = typingId;
+    typingDiv.className = 'chat-message assistant-message';
+    typingDiv.innerHTML = `
+      <div class="message-content">
+        <div class="assistant-avatar">
+          <i class="fas fa-shield-alt text-white text-lg"></i>
+        </div>
+        <div class="assistant-content">
+          <div class="typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    return typingId;
+  }
+
+  function removeTypingIndicator(typingId) {
+    const typingDiv = document.getElementById(typingId);
+    if (typingDiv) {
+      typingDiv.remove();
+    }
+  }
+
+  function addMessage(role, content, autoNarrate = false) {
+    const messagesContainer = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    const messageId = 'message-' + Date.now();
+
+    messageDiv.className = `chat-message ${role === 'assistant' ? 'assistant-message' : 'user-message'}`;
+
+    // Handle empty state
+    if (messagesContainer.querySelector('.empty-state')) {
+      messagesContainer.innerHTML = '';
+    }
+
+    if (role === 'assistant') {
+      messageDiv.innerHTML = `
+        <div class="message-content">
+          <div class="assistant-avatar">
+            <i class="fas fa-shield-alt text-white text-lg"></i>
+          </div>
+          <div class="assistant-content">
+            <div id="${messageId}">${content}</div>
+            <button class="narrate-btn text-gray-400 hover:text-blue-400 mt-2" data-text="${content}">
+              <i class="fas fa-volume-up text-sm"></i> Narrate
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      messageDiv.innerHTML = `
+        <div class="message-content">
+          ${content}
+        </div>
+      `;
+    }
+
+    messagesContainer.appendChild(messageDiv);
+
+    // Process markdown for assistant messages
+    if (role === 'assistant') {
+      document.getElementById(messageId).innerHTML = marked.parse(content);
+
+      // Apply syntax highlighting to code blocks
+      messageDiv.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+
+      // Setup narrate button for dynamically added messages
+      const narrateBtn = messageDiv.querySelector('.narrate-btn');
+      if (narrateBtn) {
+        const narrateControl = setupNarrateButton(narrateBtn);
+        // Return narrateControl to allow automatic narration
+        return narrateControl;
+      }
+    }
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return null;
+  }
+
+  async function createNewChat() {
+    try {
+      const response = await fetch('/api/chats/new', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      window.location.href = `/chat?chat_id=${data.chat_id}`;
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
+  }
+
+  async function deleteChat(chatId) {
+    if (!confirm('Are you sure you want to delete this conversation?')) return;
+   
+    try {
+      const response = await fetch(`/api/chats/${chatId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+     
+      if (data.success) {
+        if (chatId === currentChatId) {
+          window.location.href = '/';
+        } else {
+          document.querySelector(`[data-chat-id="${chatId}"]`).remove();
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  }
+
+  async function loadChat(chatId) {
+    try {
+      const response = await fetch(`/api/chats/${chatId}`);
+      const data = await response.json();
+     
+      // Update messages
+      const messagesContainer = document.getElementById('messages');
+      messagesContainer.innerHTML = '';
+     
+      data.messages.forEach(message => {
+        addMessage(message.role, message.content);
+      });
+     
+      // Update active chat
+      document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.chatId === chatId);
+      });
+     
+      // Update URL without reload
+      window.history.pushState({}, '', `/?chat_id=${chatId}`);
+    } catch (error) {
+      console.error('Error loading chat:', error);
+    }
+  }
+
+  async function updateChatList() {
+    try {
+      const response = await fetch('/api/chats');
+      const chats = await response.json();
+     
+      const chatList = document.getElementById('chat-list');
+      chatList.innerHTML = chats.map(chat => `
+        <div class="chat-item ${chat.id === currentChatId ? 'active' : ''} group"
+             onclick="loadChat('${chat.id}')"
+             data-chat-id="${chat.id}">
+          <i class="fas fa-message text-sm mr-3 text-gray-500"></i>
+          <div class="flex-1 truncate text-sm">${chat.title}</div>
+          <button onclick="event.stopPropagation(); deleteChat('${chat.id}')"
+                  class="hidden group-hover:block text-gray-400 hover:text-red-400">
+            <i class="fas fa-trash-alt text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Error updating chat list:', error);
+    }
+  }
+  
+  function useExamplePrompt(prompt) {
+    const input = document.getElementById('user-input');
+    input.value = prompt;
+    input.style.height = '';
+    input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+    input.focus();
+  }
+
+  // Toggle Sidebar for Mobile
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('sidebar-hidden');
+  }
+
+  // Toggle Debug Panel
+  function toggleDebugPanel() {
+    const debugPanel = document.getElementById('debug-panel');
+    debugMode = !debugMode;
+    debugPanel.style.display = debugMode ? 'block' : 'none';
+  }
+
+  // Update Debug Panel
+  function updateDebugPanel(data) {
+    const debugContent = document.getElementById('debug-content');
+    debugContent.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  }
+
+  // Scroll to bottom of messages on load
+  window.onload = () => {
+    const messagesContainer = document.getElementById('messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  };
+  </script>
+</body>
+</html>

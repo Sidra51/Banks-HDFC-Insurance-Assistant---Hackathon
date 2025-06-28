@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HDFC Life Insurance Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --hdfc-red: #DC143C;
+      --hdfc-blue: #004B87;
+      --hdfc-light-blue: #E6F3FF;
+      --hdfc-dark: #0A0A0F;
+      --hdfc-gray: #1C1C23;
+      --hdfc-light-gray: #2A2A35;
+      --hdfc-accent: #FF6B6B;
+      --hdfc-gold: #FFD700;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--hdfc-dark) 0%, var(--hdfc-gray) 50%, var(--hdfc-light-gray) 100%);
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* Animated background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(220, 20, 60, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 75, 135, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+      animation: backgroundFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes backgroundFloat {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(-10px, -20px) rotate(1deg); }
+      66% { transform: translate(10px, 20px) rotate(-1deg); }
+    }
+
+    /* Scrollbar styling */
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 8px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--hdfc-red), var(--hdfc-accent));
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, var(--hdfc-accent), var(--hdfc-red));
+    }
+
+    /* HDFC Bank-style Header */
+    .hdfc-header {
+      background: linear-gradient(135deg, var(--hdfc-blue) 0%, var(--hdfc-red) 100%);
+      padding: 0;
+      margin-bottom: 0;
+      box-shadow: 0 4px 20px rgba(0, 75, 135, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .hdfc-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hdfc-logo {
+      display: flex;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .hdfc-logo i {
+      margin-right: 12px;
+      font-size: 2rem;
+      color: var(--hdfc-gold);
+    }
+
+    .hdfc-user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.9rem;
+    }
+
+    .hdfc-user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--hdfc-gold), var(--hdfc-accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--hdfc-dark);
+    }
+
+    /* Enhanced dashboard header */
+    .dashboard-header {
+      background: linear-gradient(135deg, var(--hdfc-red) 0%, var(--hdfc-accent) 50%, var(--hdfc-blue) 100%);
+      border-radius: 0 0 24px 24px;
+      padding: 32px 40px;
+      margin-bottom: 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(220, 20, 60, 0.3);
+    }
+
+    .dashboard-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .dashboard-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, white, var(--hdfc-light-blue), var(--hdfc-gold));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 1;
+    }
+
+    .dashboard-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-top: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Chatbot Hero Section */
+    .chatbot-hero {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border: 2px solid rgba(220, 20, 60, 0.3);
+      border-radius: 24px;
+      padding: 40px;
+      margin: 0 24px 40px 24px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 16px 60px rgba(220, 20, 60, 0.2);
+    }
+
+    .chatbot-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--hdfc-red), var(--hdfc-gold), var(--hdfc-blue));
+    }
+
+    .chatbot-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .chatbot-text {
+      flex: 1;
+    }
+
+    .chatbot-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, var(--hdfc-red), var(--hdfc-accent), var(--hdfc-gold));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chatbot-icon-large {
+      font-size: 2.5rem;
+      background: linear-gradient(45deg, var(--hdfc-red), var(--hdfc-accent));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulse 2s infinite;
+    }
+
+    .chatbot-description {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .chatbot-cta {
+      background: linear-gradient(135deg, var(--hdfc-red) 0%, var(--hdfc-accent) 100%);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 20px rgba(220, 20, 60, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .chatbot-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(220, 20, 60, 0.4);
+      background: linear-gradient(135deg, var(--hdfc-accent) 0%, var(--hdfc-red) 100%);
+    }
+
+    .chatbot-visual {
+      flex: 0 0 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chatbot-bot {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, var(--hdfc-red), var(--hdfc-accent));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: white;
+      animation: float 3s ease-in-out infinite;
+      box-shadow: 0 12px 40px rgba(220, 20, 60, 0.4);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Enhanced cards */
+    .folder-card, .pdf-card, .subfolder-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+      border: 1px solid rgba(220, 20, 60, 0.2);
+      border-radius: 20px;
+      padding: 32px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(220, 20, 60, 0.1);
+    }
+
+    .folder-card::before, .pdf-card::before, .subfolder-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--hdfc-red), var(--hdfc-accent), var(--hdfc-blue));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+
+    .folder-card:hover, .pdf-card:hover, .subfolder-card:hover {
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.15) 0%, rgba(255, 107, 107, 0.1) 100%);
+      border-color: rgba(220, 20, 60, 0.5);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(220, 20, 60, 0.25);
+    }
+
+    .folder-card:hover::before, .pdf-card:hover::before, .subfolder-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .folder-card.active {
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.2) 0%, rgba(255, 107, 107, 0.15) 100%);
+      border-color: var(--hdfc-red);
+      box-shadow: 0 16px 40px rgba(220, 20, 60, 0.3);
+    }
+
+    /* Card content styling */
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      background: linear-gradient(45deg, var(--hdfc-red), var(--hdfc-accent));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .folder-card:hover .card-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--hdfc-light-blue);
+      margin-bottom: 12px;
+      transition: color 0.3s ease;
+    }
+
+    .folder-card:hover .card-title, .pdf-card:hover .card-title {
+      color: white;
+    }
+
+    .card-description {
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    /* Section transitions */
+    .folder-section, .content-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      display: none;
+    }
+
+    .folder-section.active, .content-section.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Enhanced back button */
+    .back-button {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border: 1px solid rgba(220, 20, 60, 0.3);
+      border-radius: 50px;
+      padding: 12px 24px;
+      color: var(--hdfc-light-blue);
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      margin: 24px;
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
+    .back-button:hover {
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.2) 0%, rgba(255, 107, 107, 0.15) 100%);
+      border-color: var(--hdfc-red);
+      color: white;
+      transform: translateX(-4px);
+    }
+
+    /* Plans Section Title */
+    .plans-section-title {
+      text-align: center;
+      padding: 32px 24px;
+      margin-bottom: 24px;
+    }
+
+    .plans-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, var(--hdfc-red), var(--hdfc-accent), var(--hdfc-blue));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .plans-subtitle {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Grid enhancements */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      padding: 0 24px;
+    }
+
+    /* Loading animation */
+    .loading-animation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      display: none;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(220, 20, 60, 0.3);
+      border-top: 3px solid var(--hdfc-red);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .hdfc-nav {
+        padding: 12px 16px;
+      }
+
+      .hdfc-logo {
+        font-size: 1.2rem;
+      }
+
+      .hdfc-user-info {
+        font-size: 0.8rem;
+        gap: 12px;
+      }
+
+      .dashboard-header {
+        padding: 24px 24px;
+        margin-bottom: 24px;
+        border-radius: 0 0 16px 16px;
+      }
+
+      .dashboard-title {
+        font-size: 2rem;
+      }
+
+      .chatbot-hero {
+        padding: 24px;
+        margin: 0 16px 32px 16px;
+        border-radius: 16px;
+      }
+
+      .chatbot-content {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+      }
+
+      .chatbot-title {
+        font-size: 1.8rem;
+        justify-content: center;
+      }
+
+      .chatbot-visual {
+        flex: none;
+      }
+
+      .chatbot-bot {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+      }
+
+      .plans-title {
+        font-size: 2rem;
+      }
+
+      .plans-subtitle {
+        font-size: 1rem;
+      }
+
+      .folder-card, .pdf-card, .subfolder-card {
+        padding: 24px;
+        border-radius: 16px;
+      }
+
+      .grid-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 0 16px;
+      }
+
+      .card-icon {
+        font-size: 2rem;
+      }
+
+      .card-title {
+        font-size: 1.25rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-header {
+        padding: 20px 16px;
+      }
+
+      .dashboard-title {
+        font-size: 1.75rem;
+      }
+
+      .chatbot-hero {
+        padding: 20px;
+        margin: 0 12px 24px 12px;
+      }
+
+      .chatbot-title {
+        font-size: 1.5rem;
+      }
+
+      .folder-card, .pdf-card, .subfolder-card {
+        padding: 20px;
+      }
+
+      .grid-container {
+        padding: 0 12px;
+      }
+    }
+  </style>
+  <script>
+    // Enhanced JavaScript with smooth transitions
+    function toggleFolder(folderId) {
+      const folderSection = document.getElementById('folder-section');
+      const contentSection = document.getElementById(`content-section-${folderId}`);
+      
+      // Add loading animation
+      showLoading();
+      
+      setTimeout(() => {
+        folderSection.classList.remove('active');
+        setTimeout(() => {
+          contentSection.classList.add('active');
+          hideLoading();
+          // Smooth scroll to top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 250);
+      }, 100);
+    }
+
+    function showFolders() {
+      showLoading();
+      
+      setTimeout(() => {
+        document.querySelectorAll('.content-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        setTimeout(() => {
+          document.getElementById('folder-section').classList.add('active');
+          hideLoading();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 250);
+      }, 100);
+    }
+
+    function showLoading() {
+      document.querySelector('.loading-animation').style.display = 'block';
+    }
+
+    function hideLoading() {
+      document.querySelector('.loading-animation').style.display = 'none';
+    }
+
+    // Add entrance animations on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      // Show folder section by default
+      document.getElementById('folder-section').classList.add('active');
+      
+      const cards = document.querySelectorAll('.folder-card, .pdf-card, .subfolder-card');
+      cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      });
+    });
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const activeFolderSection = document.getElementById('folder-section');
+        if (!activeFolderSection.classList.contains('active')) {
+          showFolders();
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <!-- Loading Animation -->
+  <div class="loading-animation">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="min-h-screen scrollbar-thin">
+    <!-- Enhanced Dashboard Header -->
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">HDFC Your Insurance Portal</h1>
+      <p class="dashboard-subtitle">Secure your future with our comprehensive insurance solutions</p>
+    </div>
+
+    <!-- Chatbot Hero Section -->
+<div class="chatbot-hero">
+  <div class="chatbot-content">
+    <div class="chatbot-text">
+      <h2 class="chatbot-title">
+        <i class="fas fa-robot chatbot-icon-large"></i>
+        Try Our Smart AI Assistant
+      </h2>
+      <p class="chatbot-description">
+        Get instant personalized insurance recommendations! Our AI-powered chatbot analyzes your needs and suggests the perfect policy mix. Whether you're planning for retirement, protecting your family, or building wealth - we've got you covered.
+      </p>
+      <a href="{{ url_for('chat') }}" class="chatbot-cta">
+        <i class="fas fa-comments"></i>
+        Start Smart Chat
+      </a>
+    </div>
+    <div class="chatbot-visual">
+      <div class="chatbot-bot">
+        <i class="fas fa-robot"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Plans Section Title -->
+    <div class="plans-section-title">
+      <h2 class="plans-title">Explore Our Insurance Plans</h2>
+      <p class="plans-subtitle">Choose from our comprehensive range of insurance solutions designed to meet every financial goal and life stage</p>
+    </div>
+
+    <!-- Enhanced Folder Section -->
+    <div class="folder-section" id="folder-section">
+      <div class="grid-container">
+        {% for folder, subfolders in pdf_files.items() %}
+        <div class="folder-card" onclick="toggleFolder('{{ folder|replace(' ', '-') }}')">
+          <div class="card-icon">
+            {% if folder == 'Annuity Plans' %}
+              <i class="fas fa-chart-line"></i>
+            {% elif folder == 'Health Plans' %}
+              <i class="fas fa-heart-pulse"></i>
+            {% elif folder == 'Pension Plans' %}
+              <i class="fas fa-piggy-bank"></i>
+            {% elif folder == 'Protection Plans' %}
+              <i class="fas fa-shield-alt"></i>
+            {% elif folder == 'Savings Plans' %}
+              <i class="fas fa-coins"></i>
+            {% elif folder == 'ULIP Plans' %}
+              <i class="fas fa-chart-pie"></i>
+            {% else %}
+              <i class="fas fa-folder"></i>
+            {% endif %}
+          </div>
+          <h2 class="card-title">{{ folder }}</h2>
+          <p class="card-description">
+            {% if folder == 'Annuity Plans' %}
+              Secure retirement income plans designed to provide steady cash flow when you need it most.
+            {% elif folder == 'Health Plans' %}
+              Comprehensive health coverage and medical riders to protect against rising healthcare costs.
+            {% elif folder == 'Pension Plans' %}
+              Build a robust retirement corpus with guaranteed and market-linked pension solutions.
+            {% elif folder == 'Protection Plans' %}
+              Term insurance and protection riders ensuring financial security for your loved ones.
+            {% elif folder == 'Savings Plans' %}
+              Disciplined savings with attractive returns and tax benefits for your financial goals.
+            {% elif folder == 'ULIP Plans' %}
+              Dual benefit plans combining life insurance protection with investment opportunities.
+            {% else %}
+              Explore our comprehensive range of insurance solutions designed for your needs.
+            {% endif %}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Enhanced Content Sections -->
+    {% for folder, subfolders in pdf_files.items() %}
+    <div class="content-section" id="content-section-{{ folder|replace(' ', '-') }}">
+      <button class="back-button" onclick="showFolders()">
+        <i class="fas fa-arrow-left mr-2"></i>Back to All Plans
+      </button>
+      
+      <div class="grid-container">
+        {% if subfolders.get('') %}
+        {% for pdf in subfolders.get('') %}
+        <a href="{{ url_for('view_pdf', folder=folder, filename=pdf) }}" class="pdf-card">
+          <div class="card-icon">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <h3 class="card-title">{{ pdf }}</h3>
+          <p class="card-description">Comprehensive details and benefits of this {{ folder }} policy document.</p>
+        </a>
+        {% endfor %}
+        {% endif %}
+        
+        {% for subfolder, pdfs in subfolders.items() if subfolder != '' %}
+        <div class="subfolder-card">
+          <div class="card-icon">
+            <i class="fas fa-folder-open"></i>
+          </div>
+          <h3 class="card-title">{{ subfolder }}</h3>
+          <div class="mt-4 space-y-3">
+            {% for pdf in pdfs %}
+            <a href="{{ url_for('view_pdf', folder=folder, subfolder=subfolder, filename=pdf) }}" 
+               class="block p-4 rounded-lg bg-black bg-opacity-20 hover:bg-opacity-40 transition-all duration-300 border border-transparent hover:border-red-500">
+              <h4 class="text-sm font-medium text-white flex items-center">
+                <i class="fas fa-file-pdf mr-3 text-red-400"></i>{{ pdf }}
+              </h4>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

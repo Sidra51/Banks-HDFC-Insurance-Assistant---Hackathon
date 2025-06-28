@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --hdfc-red: #DC143C;
+            --hdfc-blue: #004B87;
+            --hdfc-light-blue: #E6F3FF;
+            --hdfc-dark: #0A0A0F;
+            --hdfc-gray: #1C1C23;
+            --hdfc-light-gray: #2A2A35;
+            --hdfc-accent: #FF6B6B;
+            --hdfc-gold: #FFD700;
+            --sidebar-width: 300px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--hdfc-dark) 0%, var(--hdfc-gray) 50%, var(--hdfc-light-gray) 100%);
+            color: var(--hdfc-light-blue);
+            line-height: 1.5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Animated background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(220, 20, 60, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 75, 135, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-10px, -20px) rotate(1deg); }
+            66% { transform: translate(10px, 20px) rotate(-1deg); }
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--hdfc-red) 0%, var(--hdfc-blue) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        .app-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, white, var(--hdfc-light-blue));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pdf-container {
+            margin-top: 4rem;
+            padding: 1.5rem;
+            height: calc(100vh - 4rem);
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .pdf-viewer {
+            flex-grow: 1;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-radius: 1rem;
+            border: 1px solid rgba(220, 20, 60, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(8px);
+        }
+
+        .pdf-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .folder-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .folder-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--hdfc-light-blue);
+            font-size: 1.1rem;
+        }
+
+        .subfolder-section {
+            margin-left: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .subfolder-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.9rem;
+        }
+
+        /* Drag handle for resizing */
+        #drag-handle {
+            width: 5px;
+            cursor: ew-resize;
+            background: linear-gradient(90deg, var(--hdfc-red), var(--hdfc-blue));
+            border-radius: 2px;
+        }
+
+        .pdf-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 1rem;
+        }
+
+        .pdf-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            color: var(--hdfc-light-blue);
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.1) 0%, rgba(0, 75, 135, 0.1) 100%);
+            color: white;
+        }
+
+        .active-nav {
+            background: linear-gradient(90deg, var(--hdfc-red), var(--hdfc-accent));
+            color: white;
+        }
+
+        .active-nav:hover {
+            background: linear-gradient(90deg, var(--hdfc-accent), var(--hdfc-red));
+            color: white;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-radius: 1rem;
+            border: 1px solid rgba(220, 20, 60, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 7rem);
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .sidebar-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--hdfc-light-blue);
+            flex-shrink: 0;
+        }
+
+        .rag-form {
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .form-control {
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem;
+            background: var(--hdfc-dark);
+            color: var(--hdfc-light-blue);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--hdfc-red);
+            box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.2);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            border: 1px solid rgba(220, 20, 60, 0.25);
+            color: var(--hdfc-light-blue);
+        }
+
+        .btn-icon:hover {
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.15) 0%, rgba(0, 75, 135, 0.15) 100%);
+            border-color: var(--hdfc-red);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--hdfc-red), var(--hdfc-accent));
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, var(--hdfc-accent), var(--hdfc-red));
+        }
+
+        .btn-success {
+            background: linear-gradient(90deg, var(--hdfc-blue), var(--hdfc-light-blue));
+            border: none;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(90deg, var(--hdfc-light-blue), var(--hdfc-blue));
+        }
+
+        .rag-response {
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.1) 0%, rgba(0, 75, 135, 0.1) 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            overflow-y: auto;
+            max-height: 40vh;
+            word-wrap: break-word;
+            flex-shrink: 0;
+            color: var(--hdfc-light-blue);
+        }
+
+        .query-history {
+            margin-top: 1.5rem;
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .query-item {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            position: relative;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            border: 1px solid rgba(220, 20, 60, 0.15);
+            color: var(--hdfc-light-blue);
+        }
+
+        .query-text {
+            margin-bottom: 0.5rem;
+            padding-right: 2rem;
+        }
+
+        .query-time {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.75rem;
+        }
+
+        .delete-query {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            background: var(--hdfc-red);
+            color: white;
+            border: none;
+        }
+
+        .offcanvas {
+            background: linear-gradient(135deg, var(--hdfc-dark) 0%, var(--hdfc-gray) 50%, var(--hdfc-light-gray) 100%);
+            color: var(--hdfc-light-blue);
+            border-right: 1px solid rgba(220, 20, 60, 0.15);
+        }
+
+        .offcanvas-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .offcanvas-title {
+            background: linear-gradient(45deg, white, var(--hdfc-light-blue));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        @media (max-width: 768px) {
+            .pdf-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <h1 class="header-title">
+            {{ filename }}
+        </h1>
+        <div class="header-actions">
+            <button class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavigation"
+                aria-controls="offcanvasNavigation" title="Navigation">
+                <i class="fas fa-folder-open"></i>
+            </button>
+            <button id="toggle-sidebar" class="btn btn-icon" title="Toggle RAG Sidebar">
+                <i class="fas fa-robot"></i>
+            </button>
+            <button id="dark-mode-toggle" class="btn btn-icon" title="Toggle Dark Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="mark-completed" class="btn btn-success">
+                <i class="fas fa-check me-2"></i>Mark Complete
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-home me-2"></i>Back to Home
+            </a>
+        </div>
+    </header>
+
+    <!-- Offcanvas Navigation -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavigation"
+        aria-labelledby="offcanvasNavigationLabel">
+        <div class="offcanvas-header">
+            <h4 class="offcanvas-title" id="offcanvasNavigationLabel">
+                <i class="fas fa-folder-open me-2"></i>
+                {{ folder or 'Root' }}
+                {% if subfolder %}
+                / {{ subfolder }}
+                {% endif %}
+            </h4>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% set pdf_files = {
+                'Annuity Plans': {
+                    '': [
+                        '0108230022-HDFC-Life-Smart-Pension-Plus.pdf',
+                        'HDFC-Life-Pension-Guaranteed-Plan.pdf',
+                        'HDFC-Life-Systematic-Pension-Plan-Brochure.pdf',
+                        'systematic-retirement-plan.pdf'
+                    ]
+                },
+                'Health Plans': {
+                    '': [
+                        '0140217024-HDFC-Life-Group-Critical-Illness-Plus-Rider.pdf',
+                        'HDFC-Life-Group-Health-Shield.pdf'
+                    ],
+                    'rider': [
+                        'HDFC-Life-Health-Plus-Rider-Linked-Sales-Brochure.pdf',
+                        'HDFC-Life-Health-Plus-Rider-Non-Linked-Retail-Brochure.pdf',
+                        'HDFC-Life-Income-Benefit-on-Accidental-Disability-Rider.pdf',
+                        'HDFC-Life-Income-Benefit-on-accidental-disability-Rider-Non-Linked.pdf',
+                        'HDFC-Life-Livewell-Rider-Non-Linked-Brochure.pdf',
+                        'HDFC-Life-Livewell-Rider-linked-Brochure.pdf',
+                        'HDFC-Life-Protect-Plus-Rider-Non-Linked.pdf',
+                        'HDFC-Life-Protect-Plus-Rider.pdf',
+                        'HDFC-Waiver-of-Premium-Rider-linked.pdf',
+                        'HDFC-Waiver-of-Premium-Rider.pdf'
+                    ]
+                },
+                'Pension Plans': {
+                    '': [
+                        '0132667023-HDFC-Life-Group-Unit-Linked-Future-Secure-Plan.pdf',
+                        'HDFC-GROUP-GRATUITY-BROCHURE.pdf',
+                        'HDFC-LIFE-Group-Variable-Employee-Benefit-Plan.pdf',
+                        'HDFC-Life-Group-Credit-Protect-Plus-Insurance-Plan.pdf',
+                        'HDFC-Life-Group-Unit-Linked-Pension-Plan.pdf',
+                        'HDFC-Life-Guaranteed-Pension-Plan-Brochure.pdf',
+                        'HDFC-Life-Smart-Pension-Plan-Brochure.pdf',
+                        'HDFC-SL-Group-Traditional-Plan.pdf',
+                        'HDFC-SL-Group-Traditional-Secure-Plan.pdf',
+                        'sanchay-aajeevan-guaranteed-advantage-brochure.pdf'
+                    ]
+                },
+                'Protection Plans': {
+                    '': [
+                        'Click-2-Protect-Ultimate-Brochure.pdf',
+                        'HDFC-Life-GROUP-TERM-LIFE-BROCHURE.pdf',
+                        'HDFC-Life-Group-Credit-Protect-Plus-Insurance-Plan.pdf',
+                        'HDFC-Life-Group-Jeevan-Suraksha.pdf',
+                        'HDFC-Life-Group-Poorna-Credit-Suraksha.pdf',
+                        'HDFC-Life-Group-Suraksha.pdf',
+                        'HDFC-Life-Group-Term-Insurance-Plan.pdf',
+                        'HDFC-Life-Income-Benefit-on-Accidental-Disability-Rider.pdf',
+                        'HDFC-Life-Sanchay-Legacy-Brochure.pdf',
+                        'MC062124237-V01-HDFC-Life-Click-2-Protect-Life-Retail-Brochure.pdf',
+                        'PP112126374-V02-HDFC-Life-PMJJBY-Retail-Brochure.pdf',
+                        'click-2-protect-elite-plus-brochure.pdf'
+                    ],
+                    'rider': [
+                        'HDFC-Life-Health-Plus-Rider-Linked-Sales-Brochure.pdf',
+                        'HDFC-Life-Health-Plus-Rider-Non-Linked-Retail-Brochure.pdf',
+                        'HDFC-Life-Income-Benefit-on-Accidental-Disability-Rider.pdf',
+                        'HDFC-Life-Income-Benefit-on-accidental-disability-Rider-Non-Linked.pdf',
+                        'HDFC-Life-Livewell-Rider-Non-Linked-Brochure.pdf',
+                        'HDFC-Life-Livewell-Rider-linked-Brochure.pdf',
+                        'HDFC-Life-Protect-Plus-Rider-Non-Linked.pdf',
+                        'HDFC-Life-Protect-Plus-Rider.pdf',
+                        'HDFC-Waiver-of-Premium-Rider-linked.pdf',
+                        'HDFC-Waiver-of-Premium-Rider.pdf'
+                    ]
+                },
+                'Savings Plans': {
+                    '': [
+                        '017985018-HDFC-Life-Guaranteed-Savings-Plan_Brochure_Retail.pdf',
+                        'HDFC-ASSURED-GAIN-PLUS-BROCHURE.pdf',
+                        'HDFC-Life-GUARANTEED-WEALTH-PLUS-BROCHURE.pdf',
+                        'HDFC-Life-Guaranteed-Income-Insurance-Plan.pdf',
+                        'HDFC-Life-SARAL-JEEVAN-BROCHURE.pdf',
+                        'HDFC-Life-SMART-INCOME-Brochure.pdf',
+                        'HDFC-Life-Sanchay-Par-Advantage-Retail-Brochure.pdf',
+                        'HDFC-SAMPOORNA-JEEVAN-BROCHURE.pdf',
+                        'PP12201710729-HDFC-Life-Uday_Retail_Brochure.pdf',
+                        'Sanchay-Fixed-Maturity-Plan.pdf',
+                        'click-2-achieve-brochure.pdf',
+                        'click-2-achieve-par-advantage.pdf'
+                    ]
+                },
+                'ULIP Plans': {
+                    '': [
+                        '0114450023-HDFC-Life-Smart-Protect-Plan-Brochure.pdf',
+                        'HDFC-Life-Click-2-Wealth_Brochure_Retail.pdf',
+                        'HDFC-Life-Sampoorn-Nivesh-Plus-Retail-Brochure.pdf',
+                        'click-2-invest-brochure.pdf'
+                    ]
+                }
+            } %}
+            {% for current_folder, subfolders in pdf_files.items() %}
+<div class="folder-section">
+    <div class="folder-title">
+        {{ current_folder or 'Root' }}
+    </div>
+    {% if subfolders.get('') %}
+    <ul class="pdf-list">
+        {% for pdf in subfolders.get('') %}
+        <li>
+            <a class="nav-link {% if current_folder == folder and not subfolder and pdf == filename %}active-nav{% endif %}"
+                href="{{ url_for('view_pdf', folder=current_folder, filename=pdf) }}">
+                {{ pdf }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% for sub, pdfs in subfolders.items() if sub != '' %}
+    <div class="subfolder-section">
+        <div class="subfolder-title">
+            <h4>{{ sub }}</h4>
+        </div>
+        <ul class="pdf-list">
+            {% for pdf in pdfs %}
+            <li>
+                <a class="nav-link {% if current_folder == folder and sub == subfolder and pdf == filename %}active-nav{% endif %}"
+                    href="{{ url_for('view_pdf', folder=current_folder, subfolder=sub, filename=pdf) }}">
+                    {{ pdf }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+        </div>
+    </div>
+
+    <div class="pdf-container">
+        <main class="pdf-viewer">
+            <iframe class="pdf-iframe"
+                src="{{ url_for('serve_pdf', folder=folder, subfolder=subfolder, filename=filename) }}"
+                allow="fullscreen"></iframe>
+        </main>
+        <div id="drag-handle"></div>
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-robot me-2"></i>RAG Assistant
+            </div>
+
+            <form id="rag-form" class="rag-form">
+                <div class="mb-3">
+                    <label for="llm-choice" class="form-label">Select LLM:</label>
+                    <select id="llm-choice" class="form-control">
+                        <option value="groq">Grok 3</option>
+                        <option value="openrouter">OpenRouter (LLaMA 3.1 8B)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="rag-query" class="form-label">Ask a question about this PDF:</label>
+                    <input type="text" id="rag-query" class="form-control" placeholder="Enter your question...">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-paper-plane me-2"></i>Submit
+                </button>
+            </form>
+
+            <div id="rag-response" class="rag-response" style="display: none;"></div>
+
+            <div class="query-history">
+                <h6 class="mb-3">Recent Questions</h6>
+                <div id="query-history"></div>
+            </div>
+        </aside>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle sidebar
+        document.getElementById('toggle-sidebar').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('d-none');
+        });
+
+        // Dark mode toggle
+        const body = document.body;
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const darkModeIcon = darkModeToggle.querySelector('i');
+
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            darkModeIcon.classList.remove('fa-moon');
+            darkModeIcon.classList.add('fa-sun');
+        }
+
+        darkModeToggle.addEventListener('click', function () {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+
+            darkModeIcon.classList.toggle('fa-moon', !isDarkMode);
+            darkModeIcon.classList.toggle('fa-sun', isDarkMode);
+
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+        });
+
+        // Mark as completed
+        document.getElementById('mark-completed').addEventListener('click', function () {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-check me-2"></i>Completed';
+
+            fetch('{{ url_for("update_pdf_scroll") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'filename': '{{ filename }}',
+                    'folder': '{{ folder }}',
+                    'subfolder': '{{ subfolder }}',
+                    'scroll_percentage': 'completed'
+                })
+            });
+        });
+
+        // RAG functionality with streaming
+        const ragForm = document.getElementById('rag-form');
+        const ragResponse = document.getElementById('rag-response');
+
+        ragForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const query = document.getElementById('rag-query').value;
+    const llmChoice = document.getElementById('llm-choice').value;
+    const subfolderRaw = '{{ subfolder | safe }}'; // Use | safe to avoid escaping
+    const subfolder = (subfolderRaw === 'None' || subfolderRaw === '') ? null : subfolderRaw;
+
+    ragResponse.style.display = 'block';
+    ragResponse.innerHTML = '<div class="d-flex align-items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Processing your question...</div>';
+
+    try {
+        const response = await fetch('{{ url_for("stream_rag") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: query,
+                filename: '{{ filename | safe }}',
+                folder: '{{ folder | safe }}',
+                subfolder: subfolder,
+                llm_choice: llmChoice
+            })
+        });
+
+        ragResponse.innerHTML = '';
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            fullResponse += chunk;
+            ragResponse.innerHTML = marked.parse(fullResponse);
+        }
+
+        loadQueryHistory();
+    } catch (error) {
+        ragResponse.innerHTML = '<div class="text-danger">Error processing your question. Please try again.</div>';
+        console.error('Error:', error);
+    }
+});
+
+        // Drag handle for resizing
+        const dragHandle = document.getElementById('drag-handle');
+        const sidebar = document.getElementById('sidebar');
+        let isResizing = false;
+
+        dragHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            let newWidth = window.innerWidth - e.clientX - 20;
+            if (newWidth < 200) newWidth = 200;
+            sidebar.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+        });
+
+        // Query history functionality
+        function loadQueryHistory() {
+    const subfolderRaw = '{{ subfolder | safe }}';
+    const subfolder = (subfolderRaw === 'None' || subfolderRaw === '') ? null : subfolderRaw;
+    fetch(`/get_query_history/${encodeURIComponent('{{ folder | safe }}')}/${encodeURIComponent(subfolder || '')}/${encodeURIComponent('{{ filename | safe }}')}`)
+        .then(response => response.json())
+        .then(data => {
+            const historyDiv = document.getElementById('query-history');
+            historyDiv.innerHTML = '';
+
+            data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .forEach(item => {
+                    const queryDiv = document.createElement('div');
+                    queryDiv.className = 'query-item';
+                    queryDiv.innerHTML = `
+                        <div class="query-text">
+                            ${item.query}
+                            <button class="delete-query" data-id="${item.doc_id}">×</button>
+                        </div>
+                        <div class="query-time">
+                            <i class="far fa-clock me-1"></i>${new Date(item.timestamp).toLocaleString()}
+                        </div>
+                    `;
+
+                    queryDiv.querySelector('.query-text').onclick = (e) => {
+                        if (!e.target.closest('.delete-query')) {
+                            document.getElementById('rag-query').value = item.query;
+                            ragResponse.style.display = 'block';
+                            ragResponse.innerHTML = marked.parse(item.response);
+                        }
+                    };
+
+                    queryDiv.querySelector('.delete-query').onclick = (e) => {
+                        e.stopPropagation();
+                        deleteQuery(item.doc_id, queryDiv);
+                    };
+
+                    historyDiv.appendChild(queryDiv);
+                });
+        });
+}
+
+        function deleteQuery(queryId, queryElement) {
+            fetch('/delete_query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query_id: queryId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        queryElement.remove();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Load query history on page load
+        document.addEventListener('DOMContentLoaded', loadQueryHistory);
+
+        // Auto-scroll to active file in offcanvas navigation and center it
+        document.getElementById('offcanvasNavigation').addEventListener('shown.bs.offcanvas', function () {
+            const activeNav = document.querySelector('.nav-link.active-nav');
+            if (activeNav) {
+                activeNav.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }
+        });
+    </script>
+</body>
+
+</html>
