@@ -13,3 +13,4 @@ rank-bm25
 fpdf
 httpx
 pydantic
+gunicorn
