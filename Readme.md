@@ -29,6 +29,9 @@ The HDFC Insurance Assistant is a Flask-based web application developed for a ha
    ```
    Access at `http://localhost:8080`.
 
+Else:
+Run the provided 3bat files one by one it will do this steps automatically (**note Step2.bat** can take time for installation)
+
 ## Hackathon Themes Addressed
 The project tackles the following hackathon themes:
 1. **Customer Support GenAI Agent**: Provides conversational support for general insurance queries, policy details, and customer assistance.
