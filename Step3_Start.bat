@@ -25,10 +25,6 @@ IF NOT EXIST "app.py" (
     exit /b
 )
 
-REM Open the default browser to the app's host URL
-echo Opening browser to http://127.0.0.1:5000...
-start http://127.0.0.1:5000
-
 REM Run app.py
 echo Running app.py...
 python app.py
