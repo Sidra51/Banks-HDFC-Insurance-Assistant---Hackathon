@@ -228,17 +228,7 @@ class HDFCHybridRetriever(BaseRetriever):
 text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
 
 def get_llm(llm_choice: str):
-    if llm_choice == "openrouter":
-        return ChatOpenAI(
-            openai_api_base="https://openrouter.ai/api/v1",
-            api_key=os.environ.get("LLM_API_KEY"),
-            model_name="meta-llama/llama-3.1-8b-instruct:free",
-            streaming=True,
-            http_client=httpx.Client(
-                limits=httpx.Limits(max_connections=10, max_keepalive_connections=5)
-            )
-        )
-    else:
+
         return GroqLLMWrapper(model="llama-3.1-8b-instant", temperature=0)
 
 def load_knowledge_base(pdf_path, llm_choice):
