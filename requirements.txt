@@ -11,6 +11,7 @@ groq
 chromadb
 rank-bm25
 fpdf
+pypdf
 httpx
 pydantic
 gunicorn
