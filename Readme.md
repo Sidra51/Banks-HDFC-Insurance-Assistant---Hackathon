@@ -1,7 +1,33 @@
-# HDFC Insurance Assistant - Hackathon README
+# Banks (Currently HDFC) Insurance Assistant - Hackathon README
 
 ## Overview
 The HDFC Insurance Assistant is a Flask-based web application developed for a hackathon, addressing multiple themes: **Customer Support GenAI Agent**, **Insurance Claim Assistant Agent**, **Field Sales Training Agent**, and **Insurance Product Recommendation Agent**. It introduces an innovative **PDF Viewer RAG Agent** to help users understand specific insurance policies and includes **voice chat support** for enhanced user interaction. The application supports two agents: a **Consumer Assistant** for end-users and a **Field Assistant** for employees pitching policies, leveraging Retrieval-Augmented Generation (RAG) for intelligent query handling.
+
+## Setup Instructions
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/your-username/hdfc-insurance-assistant.git
+   cd hdfc-insurance-assistant
+   ```
+2. **Set Up Virtual Environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Set Environment Variables**:
+   Create a `.env` file:
+   ```env
+   GROQ_API_KEY=your_groq_api_key
+   ```
+5. **Run the Application**:
+   ```bash
+   python app.py
+   ```
+   Access at `http://localhost:8080`.
 
 ## Hackathon Themes Addressed
 The project tackles the following hackathon themes:
@@ -74,32 +100,6 @@ The query processing workflow handles both consumer and field agent interactions
    - Users can upload and query specific policy PDFs.
    - PDFs are processed using `PyPDFLoader` and `CharacterTextSplitter`, with embeddings stored in a `SentenceTransformerVectorStore`.
    - Queries are answered by retrieving relevant chunks and generating responses via the LLM.
-
-## Setup Instructions
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/your-username/hdfc-insurance-assistant.git
-   cd hdfc-insurance-assistant
-   ```
-2. **Set Up Virtual Environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Set Environment Variables**:
-   Create a `.env` file:
-   ```env
-   GROQ_API_KEY=your_groq_api_key
-   ```
-5. **Run the Application**:
-   ```bash
-   python app.py
-   ```
-   Access at `http://localhost:8080`.
 
 ## Key Features
 - **PDF Management**: Upload, organize, and view PDFs in folders/subfolders.
