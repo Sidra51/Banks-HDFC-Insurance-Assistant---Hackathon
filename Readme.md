@@ -61,6 +61,15 @@ The application features two agents:
 - **Implementation**: Integrated through Google Speech Recognition library
 - **Functionality**: Users can ask insurance-related questions or query specific policies using voice, with responses generated based on retrieved documents and conversation context.
 
+## PDF Viewer RAG Agent
+- To help users understand specific insurance policies
+ ![image](https://github.com/user-attachments/assets/88f62c64-f88a-4632-bdbe-c1eabe4384b4)
+
+
+Archietecture Diagram <details> <summary>Preview image </summary> ![image](https://github.com/user-attachments/assets/bb6bebeb-c644-4610-a85e-9d971022854f) </details>
+
+
+
 ## Embedding Model
 - **Model Used**: SentenceTransformer (`all-MiniLM-L6-v2`)
 - **Purpose**: Encodes text into dense vector embeddings for semantic similarity searches.
