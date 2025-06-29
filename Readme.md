@@ -6,8 +6,8 @@ The HDFC Insurance Assistant is a Flask-based web application developed for a ha
 ## Setup Instructions
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/hdfc-insurance-assistant.git
-   cd hdfc-insurance-assistant
+   git clone https://github.com/Sidra51/Banks-HDFC-Insurance-Assistant---Hackathon.git
+   cd Banks-HDFC-Insurance-Assistant---Hackathon-main
    ```
 2. **Set Up Virtual Environment**:
    ```bash
