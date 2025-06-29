@@ -45,10 +45,16 @@ The application features two agents:
 - **Consumer Assistant**:
   - Handles **Customer Support GenAI**, **Insurance Claim Assistant**, and **Insurance Product Recommendation** tasks.
   - Assists end-users with general inquiries, claim-related questions, and product recommendations using policy document context.
-  - Supports **voice chat** for conversational queries, enhancing accessibility (available on Grok iOS and Android apps).
+  - Supports **voice chat** for conversational queries, enhancing accessibility (Google Speech Recognition).
+    
+    ![image](https://github.com/user-attachments/assets/74fab899-8177-49a1-bda5-e41819523ee2)
+
+
 - **Field Assistant**:
   - Designed for employees pitching insurance policies.
   - Uses specialized prompts (`Field_agent_prompt`) for sales scenarios.
+  - ![image](https://github.com/user-attachments/assets/60b6fa52-a024-46f9-a20b-1201a9383f98)
+
 
 ## Voice Chat Support
 - **Feature**: Voice chat support enables users to interact with the Consumer Assistant via voice input.
